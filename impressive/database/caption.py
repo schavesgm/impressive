@@ -1,12 +1,25 @@
 """Module containing functionality to caption images."""
 
 from collections.abc import Callable
+from enum import Enum
 from typing import Protocol
 
 import torch
 from PIL.Image import Image
+from transformers import (
+    AutoModelForCausalLM,
+    AutoProcessor,
+    BlipForConditionalGeneration,
+    BlipProcessor,
+)
 
-__all__ = ["Captioner", "Generator", "Processor", "build_captioner"]
+__all__ = [
+    "Captioner",
+    "CaptioningModels",
+    "Inferer",
+    "Processor",
+    "build_captioner",
+]
 
 
 class Processor[**K](Protocol):
@@ -21,7 +34,7 @@ class Processor[**K](Protocol):
         """Return the decoded version of the ``Model`` output."""
 
 
-class Generator[**K](Protocol):
+class Inferer[**K](Protocol):
     """Protocol for types allowing inferring captions from image tensors."""
 
     def generate(self, inputs: torch.Tensor, *args: K.args, **kwargs: K.kwargs) -> torch.Tensor:
@@ -33,13 +46,13 @@ type Captioner = Callable[[Image], list[str]]
 
 
 def build_captioner(
-    processor: Processor, generator: Generator, num_beams: int, num_sequences: int
+    processor: Processor, generator: Inferer, num_beams: int, num_sequences: int
 ) -> Captioner:
     """Return a ``Captioner`` function to caption ``Image`` objects.
 
     Args:
         processor (Processor): ``Processor`` type allowing pre-processing images.
-        generator (Generator): ``Generator`` type allowing generating data from input.
+        generator (Inferer): ``Inferer`` type allowing generating data from input.
         num_beams (int): Number of beams to use in the data generation.
         num_sequences (int): Number of sequences to generate.
 
@@ -55,3 +68,30 @@ def build_captioner(
         pixel_values = processor(images=image, return_tensors="pt").pixel_values.to(device)
         generated_ids = generator.generate(pixel_values=pixel_values, **config)
         return processor.batch_decode(generated_ids, skip_special_tokens=True)
+
+    return _captioner
+
+
+class CaptioningModels(Enum):
+    """Enumeration containing predefined captioning models."""
+
+    SALESFORCE_BLIP: str = "Salesforce/blip-image-captioning-base"
+    MICROSOFT_GIT: str = "microsoft/git-base-coco"
+
+    @property
+    def processor(self) -> Processor:
+        """Return the ``Processor`` object to process input images."""
+        match self:
+            case CaptioningModels.SALESFORCE_BLIP:
+                return BlipProcessor.from_pretrained(self.value)
+            case CaptioningModels.MICROSOFT_GIT:
+                return AutoProcessor.from_pretrained(self.value)
+
+    @property
+    def inferer(self) -> Processor:
+        """Return the ``Inferer`` object to produce captions."""
+        match self:
+            case CaptioningModels.SALESFORCE_BLIP:
+                return BlipForConditionalGeneration.from_pretrained(self.value)
+            case CaptioningModels.MICROSOFT_GIT:
+                return AutoModelForCausalLM.from_pretrained(self.value)
