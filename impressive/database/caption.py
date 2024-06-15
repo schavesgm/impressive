@@ -4,7 +4,7 @@ from collections.abc import Callable
 from typing import Protocol
 
 import torch
-from PIL import Image
+from PIL.Image import Image
 
 __all__ = ["Captioner", "Generator", "Processor", "build_captioner"]
 
