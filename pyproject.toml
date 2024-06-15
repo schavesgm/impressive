@@ -1,0 +1,50 @@
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = ["setuptools>=60.0.0"]
+
+[project]
+authors = [
+  {name = "Sergio Chaves García-Mascaraque", email = "sergiozteskate@gmail.com"}
+]
+dependencies = [
+  "pillow >= 10.3.0",
+  "torch >= 2.3.1",
+  "transformers >= 4.41.2 ",
+  "weaviate-client >= 4.6.4",
+]
+description = "Package containing an app to retrieve images using natural language processing."
+name = "impressive"
+readme = "README.md"
+requires-python = ">=3.12"
+version = "0.0.1"
+
+[tool.ruff]
+ignore-init-module-imports = true
+line-length = 100
+
+[tool.ruff.lint]
+ignore = ["ANN101", "ANN102", "ANN401"]
+select = [
+  "A",  # flake8-builtins
+  "ANN",  # flake8-annotations
+  "B",  # flake8-bugbear
+  "C4",  # flake8-comprehensions
+  "C90",  # mccabe
+  "D",  # pydocstyle
+  "E",  # pycodestyle: error
+  "F",  # Pyflakes
+  "I001",  # isort
+  "N",  # pep8-naming
+  "PT",  # flake8-pytest-style
+  "UP",  # pyupgrade
+  "W"  # pycodestyle: warning
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F403"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.setuptools]
+packages = ["impressive"]
