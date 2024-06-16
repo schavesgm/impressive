@@ -1,4 +1,4 @@
-"""Module containing functionality to deal with the database creation."""
+"""Module containing functionality to create and interface with the vector database backend."""
 
 from . import caption, interface
 from .caption import *
