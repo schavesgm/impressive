@@ -15,7 +15,7 @@ from transformers import (
 
 __all__ = [
     "Captioner",
-    "CaptioningModels",
+    "PredefinedModels",
     "Inferer",
     "Processor",
     "build_captioner",
@@ -72,7 +72,7 @@ def build_captioner(
     return _captioner
 
 
-class CaptioningModels(Enum):
+class PredefinedModels(Enum):
     """Enumeration containing predefined captioning models."""
 
     SALESFORCE_BLIP: str = "Salesforce/blip-image-captioning-base"
@@ -82,16 +82,16 @@ class CaptioningModels(Enum):
     def processor(self) -> Processor:
         """Return the ``Processor`` object to process input images."""
         match self:
-            case CaptioningModels.SALESFORCE_BLIP:
+            case PredefinedModels.SALESFORCE_BLIP:
                 return BlipProcessor.from_pretrained(self.value)
-            case CaptioningModels.MICROSOFT_GIT:
+            case PredefinedModels.MICROSOFT_GIT:
                 return AutoProcessor.from_pretrained(self.value)
 
     @property
     def inferer(self) -> Processor:
         """Return the ``Inferer`` object to produce captions."""
         match self:
-            case CaptioningModels.SALESFORCE_BLIP:
+            case PredefinedModels.SALESFORCE_BLIP:
                 return BlipForConditionalGeneration.from_pretrained(self.value)
-            case CaptioningModels.MICROSOFT_GIT:
+            case PredefinedModels.MICROSOFT_GIT:
                 return AutoModelForCausalLM.from_pretrained(self.value)
