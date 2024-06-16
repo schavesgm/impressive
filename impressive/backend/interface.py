@@ -2,6 +2,7 @@
 
 import base64
 from collections.abc import Iterable
+from enum import Enum
 from io import BytesIO
 from typing import NamedTuple
 
@@ -14,6 +15,8 @@ from weaviate.collections import Collection
 
 __all__ = [
     "CaptionedImage",
+    "RetrievedImage",
+    "Similarity",
     "add_images",
     "get_image_collection",
     "request_images",
@@ -33,10 +36,43 @@ class CaptionedImage(NamedTuple):
         return base64.b64encode(buffer.getvalue()).decode("utf-8")
 
 
+class Similarity(Enum):
+    """Enumeration defining the similarity thresholds.
+
+    Note:
+        These thresholds are arbitrarily defined and should be fine-tuned for a production-ready
+        application.
+    """
+
+    HIGH: float = 0.20
+    MEDIUM: float = 0.50
+    LOW: float = 1.20
+
+
+class RetrievedImage(NamedTuple):
+    """Container for a retrieved image from the collection."""
+
+    image: Image
+    distance: float
+
+    @property
+    def similarity(self) -> Similarity:
+        """Return the similarity of the retrieved image to the requested caption."""
+        if self.distance <= Similarity.HIGH.value:
+            return Similarity.HIGH
+        if self.distance <= Similarity.MEDIUM.value:
+            return Similarity.MEDIUM
+        return Similarity.LOW
+
+
 def request_images(
     prompt: str, image_collection: Collection, ollama_model: str, num_images: int
-) -> list[Image]:
+) -> list[RetrievedImage]:
     """Request some images from the ``Collection`` object given some prompt and a model.
+
+    Note:
+        This function will filter out all requested images with values higher than
+        ``Similarity.LOW``.
 
     Args:
         prompt (str): Prompt used to request the images from the collection.
@@ -45,13 +81,21 @@ def request_images(
         num_images (int): Number of nearest neighbours to retrieve.
 
     Returns:
-        list[Image]: Collection containing the retrieved images.
+        list[RetrievedImage]: Collection of requested images.
     """
     response = ollama.embeddings(model=ollama_model, prompt=prompt)
     results = image_collection.query.near_vector(
-        near_vector=response["embedding"], limit=num_images
+        near_vector=response["embedding"],
+        limit=num_images,
+        return_metadata=wvc.query.MetadataQuery(distance=True),
     )
-    return [_from_base64(result.properties["image"]) for result in results.objects]
+    images = [
+        RetrievedImage(
+            image=_from_base64(result.properties["image"]), distance=result.metadata.distance
+        )
+        for result in results.objects
+    ]
+    return [image for image in images if image.distance <= Similarity.HIGH.value]
 
 
 def add_images(
