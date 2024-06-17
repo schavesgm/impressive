@@ -1,5 +1,7 @@
 # 🎨 Impressive
 
+![Demo](./assets/demo.gif)
+
 `Impressive` is a small application leveraging vector embeddings to produce a natural language
 search engine over images. `Impressive` depends on a small Python package called `impressive`, which
 contains functionality to simplify captioning images using image-to-text models such as
