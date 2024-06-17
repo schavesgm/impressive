@@ -13,27 +13,15 @@ from PIL.Image import open as create_image
 from weaviate import Client
 from weaviate.collections import Collection
 
+from .caption import CaptionedImage
+
 __all__ = [
-    "CaptionedImage",
     "RetrievedImage",
     "Similarity",
     "add_images",
     "get_image_collection",
     "request_images",
 ]
-
-
-class CaptionedImage(NamedTuple):
-    """Container for a captioned image."""
-
-    image: Image
-    captions: list[str]
-
-    def as_base64(self) -> str:
-        """Return the ``Image`` object as a ``base64`` string."""
-        buffer = BytesIO()
-        self.image.save(buffer, format="JPEG")
-        return base64.b64encode(buffer.getvalue()).decode("utf-8")
 
 
 class Similarity(Enum):
